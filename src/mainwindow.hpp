@@ -36,6 +36,7 @@ public:
 
 public slots:
         void setCurrentPath(const QModelIndex &index);
+        void enableSort();
 
 protected:
         void closeEvent(QCloseEvent *event);

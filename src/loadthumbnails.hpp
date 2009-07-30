@@ -25,6 +25,7 @@ struct image {
         bool      loaded;
         qint64    size;
         boost::shared_ptr<ccv_ret> ccvr;
+        boost::shared_ptr<hog_ret> hogr;
 };
 
 struct imageCache {
@@ -33,6 +34,7 @@ struct imageCache {
         int       width;
         int       height;
         boost::shared_ptr<ccv_ret> ccvr;
+        boost::shared_ptr<hog_ret> hogr;
 };
 
 #include <map>

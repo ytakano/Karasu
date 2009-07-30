@@ -3,6 +3,8 @@
 
 #define NUM_COLOR (3 * 3 * 3)
 
+#include <boost/shared_array.hpp>
+
 #include <QImage>
 
 class rgb {
@@ -27,13 +29,21 @@ public:
 };
 
 struct ccv_ret {
-        int alpha[NUM_COLOR];
-        int beta[NUM_COLOR];
-        int rank[NUM_COLOR];
+        double alpha[NUM_COLOR];
+        double beta[NUM_COLOR];
+};
+
+struct hog_ret {
+        int dim;
+        boost::shared_array<double> feature;
 };
 
 
 QImage gaussianFilter(const QImage &image, double sigma);
 void   ccv(const QImage &src, ccv_ret &ret);
+void   histogramOrientedGradients(const QImage &src, int histogram_dimension,
+                                  int cell_column, int cell_row,
+                                  int block_column, int block_row,
+                                  hog_ret &ret);
 
 #endif // IMGPROCESS_HPP

@@ -1,6 +1,10 @@
 #ifndef THUMBNAIL_HPP
 #define THUMBNAIL_HPP
 
+#include "imgprocess.hpp"
+
+#include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 #include <boost/unordered_set.hpp>
 
 #include <QFrame>
@@ -10,6 +14,8 @@
 class QMouseEvent;
 class QVBoxLayout;
 class QPaintEvent;
+
+#define Z_ORDER_NUM 11
 
 
 struct image;
@@ -28,12 +34,15 @@ public:
         void setImage(image &img);
         void clearPixmap();
 
-        QString getPath()   { return m_path; }
-        QString getFile()   { return m_file; }
-        int     getWidth()  { return m_width; }
-        int     getHeight() { return m_height; }
-        QString getDate()   { return m_date.toString("yyyy/MM/dd hh:mm"); }
-        qint64  getSize()   { return m_size; }
+        QString getPath() const  { return m_path; }
+        QString getFile() const  { return m_file; }
+        int     getWidth() const { return m_width; }
+        int     getHeight() const { return m_height; }
+        QString getDate() const  { return m_date.toString("yyyy/MM/dd hh:mm"); }
+        qint64  getSize() const  { return m_size; }
+        boost::shared_ptr<ccv_ret> getCCV() const { return m_ccvr; }
+        boost::shared_array<uint32_t> getZ() const { return m_z; }
+        int     getZnum() const { return m_znum; }
 
         // for debug
         int x, y;
@@ -75,6 +84,12 @@ private:
         QDateTime m_date;
         int       m_width, m_height;
         qint64    m_size;
+        boost::shared_ptr<ccv_ret> m_ccvr;
+        boost::shared_ptr<hog_ret> m_hogr;
+        boost::shared_array<uint32_t> m_z;
+        int m_znum;
+
+        void zOrder();
 };
 
 #endif // THUNBNAIL_HPP

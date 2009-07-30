@@ -180,6 +180,11 @@ MainWindow::initWidget()
         m_preview   = new PreviewArea;
         m_thumbArea = new ThumbArea(m_preview, m_status);
 
+        QObject::connect(m_thumbArea,
+                         SIGNAL(loadFinished()),
+                         this,
+                         SLOT(enableSort()));
+
         //m_thumbArea->setCurrentPath(QDir::currentPath());
 
         m_rightLayout->addWidget(m_thumbArea);
@@ -211,6 +216,13 @@ MainWindow::setCurrentPath(const QModelIndex &index)
 
         m_dirModel->refresh(index);
 
+        m_comboSort->setDisabled(true);
+
         m_thumbArea->setCurrentPath(path);
 }
 
+void
+MainWindow::enableSort()
+{
+        m_comboSort->setDisabled(false);
+}

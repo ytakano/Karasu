@@ -26,6 +26,7 @@ public:
 
 signals:
         void currentPathChanged();
+        void loadFinished();
 
 public slots:
         void loadImages();
@@ -37,6 +38,12 @@ protected:
         virtual void resizeEvent(QResizeEvent *event);
 
 private:
+        class compareByCorr {
+        public:
+                bool operator() (const Thumbnail *lhs,
+                                 const Thumbnail *rhs) const;
+        };
+
         static const int margin;
         static const int spacing;
 
@@ -50,11 +57,12 @@ private:
         std::vector<Thumbnail*> *m_pThumb;
         std::vector<Thumbnail*>  m_thumbPool;
         std::vector<Thumbnail*>  m_thumbByName;
-
+        std::vector<Thumbnail*>  m_thumbByCorr;
 
         void repaintThumbnails();
         void clearThumbnails();
         void drawThumbnails(std::vector<Thumbnail*> &thumb);
+        void sortByCorr();
 };
 
 #endif // THUMBSCROLL_HPP

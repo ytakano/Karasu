@@ -31,13 +31,13 @@ gaussianFilter(const QImage &src, double sigma)
         QImage  dst(w, h, QImage::Format_RGB32);
         boost::shared_array<double> tmp(new double[w * h * 3]);
         boost::shared_array<double> filter(new double[ww]);
+        QImage qimg;
 
 
         if (src.format() == QImage::Format_RGB32 ||
             src.format() == QImage::Format_ARGB32) {
                 bits = src.bits();
         } else {
-                QImage qimg;
                 qimg = src.convertToFormat(QImage::Format_RGB32);
 
                 bits = qimg.bits();
@@ -118,7 +118,6 @@ ccv(const QImage &src, ccv_ret &ret)
         const uchar *bits;
         bool flagLeft;
         bool flagRight;
-        struct histgram hist[NUM_COLOR];
         std::vector<rgb> labelColor;
         std::vector<int> labelArea;
         boost::shared_array<int>   bufferNew(new int[w]);
@@ -257,29 +256,142 @@ ccv(const QImage &src, ccv_ret &ret)
                 }
         }
 
-        for (int i = 0; i < NUM_COLOR; i++) {
-                hist[i].color = i;
-                hist[i].num = 0;
-        }
-
         for (int i = 0; i <= label; i++) {
                 if (labelArea[i] > 0) {
                         int idx;
                         if (labelArea[i] > tau) {
                                 idx = labelColor[i].toIndex();
                                 ret.alpha[idx] += labelArea[i];
-                                hist[idx].num += labelArea[i];
                         } else {
                                 idx = labelColor[i].toIndex();
                                 ret.beta[idx] += labelArea[i];
-                                hist[idx].num += labelArea[i];
                         }
                 }
         }
 
-        std::sort(hist, &hist[NUM_COLOR]);
-
+        double size = w * h;
         for (int i = 0; i < NUM_COLOR; i++) {
-                ret.rank[i] = hist[i].color;
+                ret.alpha[i] = (double)ret.alpha[i] / size;
+                ret.beta[i]  = (double)ret.beta[i]  / size;
         }
+}
+
+
+// thanks:
+// http://d.hatena.ne.jp/audioswitch/20090221/1235184623
+//
+// width:画像の幅
+// height:画像の高さ
+// histogram_dimension:ヒストグラムの要素数(だいたい9らしい)
+// cell_column:セルの列数（横方向に画像を何分割するか）
+// cell_row:セルの行数（縦方向の画像を何分割するか）
+// block_column:１ブロックの列数（だいたい3らしい）
+// block_row:１ブロックの行数（だいたい3らしい）
+void
+histogramOrientedGradients(const QImage &src, int histogram_dimension,
+                           int cell_column, int cell_row, int block_column,
+                           int block_row, hog_ret &ret)
+{
+        int x;
+        int y;
+        int bin;
+        int width  = src.width();
+        int height = src.height();
+        int cell_width = width / cell_column;
+        int cell_height = height / cell_row;
+        int block_dimension = histogram_dimension * block_column * block_row;
+        int feature_vector_dimension = (histogram_dimension * block_column *
+                                        block_row * (cell_row - block_row) *
+                                        (cell_column - block_column));
+        double fu;
+        double fv;
+        double magnitude;
+        double direction;
+        double norm;
+        double epsilon = 1.0;
+        double *histogram;
+        double *cell_feature_vector;
+        double *block_feature_vector;
+        boost::shared_array<double> image(new double[width * height]);
+        boost::shared_array<double> feature_vector(new double[feature_vector_dimension]);
+        const uchar *bits;
+        QImage qimg;
+
+
+        if (src.format() == QImage::Format_RGB32 ||
+            src.format() == QImage::Format_ARGB32) {
+                bits = src.bits();
+        } else {
+                qimg = src.convertToFormat(QImage::Format_RGB32);
+
+                bits = qimg.bits();
+        }
+
+
+        for (int i = 0; i < width * height; i++) {
+                const QRgb *pixel = (const QRgb*)&bits[i * 4];
+                image[i] = 0.299 * (double)qRed(*pixel) +
+                        0.587 * (double)qGreen(*pixel) +
+                        0.114 * (double)qBlue(*pixel);
+        }
+
+    
+        // ヒストグラムを計算する．
+        histogram = new double [histogram_dimension];
+        cell_feature_vector = new double [histogram_dimension * cell_row * cell_column];
+
+        for (int i = 0; i < cell_row; i++) {
+                for (int j = 0; j < cell_column; j++) {
+                        // セルごとにヒストグラムを計算する.
+                        memset(histogram, 0, histogram_dimension * sizeof(double));
+                        for (int v = 0; v < cell_height; v++) {
+                                y = i * cell_height + v;
+                                for (int u = 0; u < cell_width; u++) {
+                                        x = j * cell_width + u;
+                                        // 勾配強度・勾配方向を求める．
+                                        if ((x > 0) && (x < width - 1) && (y > 0) && (y < height - 1)) {
+                                                fu = image[y * width + (x + 1)] - image[y * width + (x - 1)];
+                                                fv = image[(y + 1) * width + x] - image[(y - 1) * width + x];
+                                                magnitude = sqrt(fu * fu + fv * fv);
+                                                direction = atan(fv / fu) + M_PI / 2.0;
+                                                // ヒストグラムに投票する．
+                                                bin = (int)floor( (direction * (180.0 / M_PI)) * ((double)(histogram_dimension - 1) / 180.0) );
+                                                histogram[bin] += magnitude;
+                                        }
+                                }
+                        }
+                        for (int d = 0; d < histogram_dimension; d++) {
+                                cell_feature_vector[(d * cell_row + i) * cell_column + j] = histogram[d];
+                        }
+                }
+        }
+
+        delete [] histogram;
+        
+        // ブロックごとに正規化する．
+        block_feature_vector = new double [block_dimension];
+        for (int i = 0; i < cell_row - block_row; i++) {
+                for (int j = 0; j < cell_column - block_column; j++) {
+                        for (int k = 0; k < block_row; k++) {
+                                for (int l = 0; l < block_column; l++) {
+                                        for (int d = 0; d < histogram_dimension; d++) {
+                                                block_feature_vector[(d * block_row + k) * block_column + l] = cell_feature_vector[(d * cell_row + (i + k)) * cell_column + (j + l)];
+                                        }
+                                }
+                        }
+                        norm = 0.0;
+                        for (int d = 0; d < block_dimension; d++) {
+                                norm += block_feature_vector[d] * block_feature_vector[d];
+                        }
+                        for (int d = 0; d < block_dimension; d++) {
+                                feature_vector[(d * (cell_row - block_row) + i) * (cell_column - block_column) + j] = block_feature_vector[d] / sqrt(norm + epsilon * epsilon);
+                        }
+                }
+        }
+    
+        delete [] cell_feature_vector;
+        delete [] block_feature_vector;
+
+        ret.dim = feature_vector_dimension;
+        ret.feature = feature_vector;
 }

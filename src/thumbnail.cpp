@@ -150,6 +150,10 @@ Thumbnail::setImage(image &img)
         m_width  = img.width;
         m_height = img.height;
         m_size   = img.size;
+        m_ccvr   = img.ccvr;
+        m_hogr   = img.hogr;
+
+        zOrder();
 }
 
 void
@@ -158,4 +162,69 @@ Thumbnail::clearPixmap()
         QPixmap pixmap;
 
         m_picture->setPixmap(pixmap);
+}
+
+#define DIM_BITS 6
+
+void
+Thumbnail::zOrder()
+{
+        double size;
+        int i, j;
+        int dim;
+        int znum;
+        uint32_t alpha[NUM_COLOR];
+        uint32_t beta[NUM_COLOR];
+        boost::shared_array<uint32_t> feature(new uint32_t[m_hogr->dim]);
+
+        dim  = NUM_COLOR * 2 + m_hogr->dim;
+        size = (double)(m_width * m_height);
+        znum = DIM_BITS * dim / 32 + 1;
+
+        for (i = 0; i < NUM_COLOR; i++) {
+                alpha[i] = (uint32_t)ceil(m_ccvr->alpha[i] * (1 << DIM_BITS));
+                beta[i] = (uint32_t)ceil(m_ccvr->beta[i]   * (1 << DIM_BITS));
+        }
+
+        for (i = 0; i < m_hogr->dim; i++) {
+                feature[i] = (uint32_t)ceil(m_hogr->feature[i] *
+                                            (1 << DIM_BITS));
+        }
+
+
+        m_z    = boost::shared_array<uint32_t>(new uint32_t[znum]);
+        m_znum = znum;
+
+        for (i = 0; i < znum; i++) {
+                m_z[i] = 0;
+        }
+
+
+        for (i = 0; i < DIM_BITS; i++) {
+                int shift, idx;
+
+                for (j = 0; j < NUM_COLOR; j++) {
+                        shift = i * dim - i + j * 2 + m_hogr->dim;
+                        idx   = (shift + i) / 32;
+                        shift = shift % 32;
+
+                        m_z[idx] |= (alpha[j] & (1 << i)) << shift;
+
+
+                        shift = i * dim - i + j * 2 + 1 + m_hogr->dim;
+                        idx   = (shift + i) / 32;
+                        shift = shift % 32;
+
+                        m_z[idx] |= (beta[j]  & (1 << i)) << shift;
+                }
+/*
+                for (j = 0; j < m_hogr->dim; j++) {
+                        shift = i * dim - i + j;
+                        idx   = (shift + i) / 32;
+                        shift = shift % 32;
+
+                        m_z[idx] |= (feature[j]  & (1 << i)) << shift;
+                }
+*/
+        }
 }

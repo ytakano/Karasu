@@ -80,9 +80,6 @@ ThumbArea::drawThumbnails(std::vector<Thumbnail*> &thumb)
         if (column < 1)
                 column = 1;
 
-        if (&thumb == m_pThumb) {
-        }
-
         x = y = 0;
         BOOST_FOREACH(Thumbnail *t, thumb) {
                 t->move(margin + width * x, margin + height * y);
@@ -185,12 +182,18 @@ ThumbArea::loadImage(const QString &path)
                 thumb->setImage(*img);
 
                 m_thumbByName.push_back(thumb);
+                m_thumbByCorr.push_back(thumb);
         }
 
         m_loadThumbs.setEmitSignal(true);
 
-        if (m_loadThumbs.readEverything())
+        if (m_loadThumbs.readEverything()) {
                 m_loadThumbs.stop();
+                sortByCorr();
+                drawThumbnails(m_thumbByCorr);
+                emit loadFinished();
+                return;
+        }
 
         drawThumbnails(m_thumbByName);
 }
@@ -217,6 +220,7 @@ ThumbArea::setCurrentPath(const QString &path)
 
         m_pThumb = NULL;
         m_thumbByName.clear();
+        m_thumbByCorr.clear();
 
         emit currentPathChanged();
 }
@@ -259,4 +263,93 @@ ThumbArea::changedFocus(Thumbnail *thumb)
         m_status->setText(file + " - " +
                           width + "x" + height +
                           " (" + sizeStr + ") - " + date);
+}
+
+bool
+ThumbArea::compareByCorr::operator() (const Thumbnail *lhs,
+                                      const Thumbnail *rhs) const
+{
+        int znum;
+        boost::shared_array<uint32_t> z1, z2;
+
+        z1 = lhs->getZ();
+        z2 = rhs->getZ();
+
+        znum = lhs->getZnum();
+
+        for (int i = znum - 1; i >= 0; i--) {
+                if (z1[i] < z2[i])
+                        return true;
+                else if (z1[i] > z2[i])
+                        return false;
+        }
+
+        return true;
+
+/*        double size1, size2;
+        int alpha1[NUM_COLOR], alpha2[NUM_COLOR];
+        int beta1[NUM_COLOR], beta2[NUM_COLOR];
+        uint32_t z1[11], z2[11];
+        boost::shared_ptr<ccv_ret> ccvr1, ccvr2;
+
+        ccvr1 = lhs->getCCV();
+        ccvr2 = rhs->getCCV();
+
+        size1 = (double)(lhs->getWidth() * lhs->getHeight());
+        size2 = (double)(rhs->getWidth() * rhs->getHeight());
+
+        for (int i = 0; i < NUM_COLOR; i++) {
+                alpha1[i] = (int)ceil((double)ccvr1->alpha[i] / size1 * 64);
+                alpha2[i] = (int)ceil((double)ccvr2->alpha[i] / size2 * 64);
+                beta1[i] = (int)ceil((double)ccvr1->beta[i] / size1 * 64);
+                beta2[i] = (int)ceil((double)ccvr2->beta[i] / size2 * 64);
+        }
+
+        // map to Z-order curve
+        memset(z1, 0, sizeof(z1));
+        memset(z2, 0, sizeof(z2));
+
+        for (int i = 0; i < 6; i++) {
+                for (int j = 0; j < NUM_COLOR; j++) {
+                        int shift;
+                        int idx;
+
+                        shift = i * NUM_COLOR - i + j * 2;
+                        idx   = (shift + i) / 32;
+                        shift = shift % 32;
+
+                        z1[idx] += (alpha1[j] & (1 << i)) << shift;
+                        z2[idx] += (alpha2[j] & (1 << i)) << shift;
+
+
+                        shift = i * NUM_COLOR - i + j * 2 + 1;
+                        idx   = (shift + i) / 32;
+                        shift = shift % 32;
+
+                        z1[idx] += (beta1[j]  & (1 << i)) << shift;
+                        z2[idx] += (beta2[j]  & (1 << i)) << shift;
+                }
+        }
+
+        for (int i = 10; i >= 0; i--) {
+                if (z1[i] < z2[i])
+                        return true;
+                else if (z1[i] > z2[i])
+                        return false;
+        }
+
+        return true;
+*/
+}
+
+void
+ThumbArea::sortByCorr()
+{
+        std::cout << "sort" << std::endl;
+        std::sort(m_thumbByCorr.begin(), m_thumbByCorr.end(),
+                  compareByCorr());
+
+        BOOST_FOREACH(Thumbnail *thumb, m_thumbByCorr) {
+                std::cout << thumb->getFile().toUtf8().data() << std::endl;
+        }
 }

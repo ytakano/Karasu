@@ -84,6 +84,7 @@ LoadThumbnails::run()
                 QImage     img;
                 imageCache cache;
                 boost::shared_ptr<ccv_ret> ccvr(new ccv_ret);
+                boost::shared_ptr<hog_ret> hogr(new hog_ret);
 
                 if (! fileInfo.exists()) {
                         m_images[i].loaded = false;
@@ -98,6 +99,7 @@ LoadThumbnails::run()
                         m_images[i].width  = cache.width;
                         m_images[i].height = cache.height;
                         m_images[i].ccvr   = cache.ccvr;
+                        m_images[i].hogr   = cache.hogr;
                 } else {
                         if (! img.load(path)) {
                                 m_images[i].loaded = false;
@@ -118,8 +120,13 @@ LoadThumbnails::run()
                         m_images[i].width  = img.width();
                         m_images[i].height = img.height();
 
-                        ccv(img, *ccvr);
+                        QImage qimg = gaussianFilter(m_images[i].img, 3.0);
+
+                        ccv(qimg, *ccvr);
                         m_images[i].ccvr   = ccvr;
+
+                        histogramOrientedGradients(qimg, 9, 6, 6, 3, 3, *hogr);
+                        m_images[i].hogr   = hogr;
 
                         // add to cache
                         cache.date   = fileInfo.lastModified();
@@ -127,6 +134,7 @@ LoadThumbnails::run()
                         cache.width  = img.width();
                         cache.height = img.height();
                         cache.ccvr   = ccvr;
+                        cache.hogr   = hogr;
 
                         m_imageCache[path] = cache;
                         m_cacheQueue.enqueue(path);
