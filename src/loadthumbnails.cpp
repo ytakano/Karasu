@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-#include <qtgui>
+#include <QtGui>
 
 int LoadThumbnails::max_cache = 4096;
 

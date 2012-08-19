@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include <qtgui>
+#include <QtGui>
 
 boost::unordered_set<Thumbnail*> Thumbnail::focusing;
 
@@ -169,7 +169,6 @@ Thumbnail::clearPixmap()
 void
 Thumbnail::zOrder()
 {
-        double size;
         int i, j;
         int dim;
         int znum;
@@ -178,7 +177,6 @@ Thumbnail::zOrder()
         boost::shared_array<uint32_t> feature(new uint32_t[m_hogr->dim]);
 
         dim  = NUM_COLOR * 2 + m_hogr->dim;
-        size = (double)(m_width * m_height);
         znum = DIM_BITS * dim / 32 + 1;
 
         for (i = 0; i < NUM_COLOR; i++) {

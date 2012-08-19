@@ -352,6 +352,9 @@ histogramOrientedGradients(const QImage &src, int histogram_dimension,
                                         if ((x > 0) && (x < width - 1) && (y > 0) && (y < height - 1)) {
                                                 fu = image[y * width + (x + 1)] - image[y * width + (x - 1)];
                                                 fv = image[(y + 1) * width + x] - image[(y - 1) * width + x];
+						if (fu == 0 || fv == 0)
+						  continue;
+
                                                 magnitude = sqrt(fu * fu + fv * fv);
                                                 direction = atan(fv / fu) + M_PI / 2.0;
                                                 // ヒストグラムに投票する．

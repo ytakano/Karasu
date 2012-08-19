@@ -6,7 +6,7 @@
 #include "previewarea.hpp"
 
 #include <iostream>
-#include <qtgui>
+#include <QtGui>
 
 
 std::vector<QWidget*> p_wid;
@@ -171,9 +171,9 @@ MainWindow::initWidget()
         m_rightTopLayout = new QHBoxLayout;
         m_comboSort      = new QComboBox;
 
-        m_rightTopLayout->addWidget(m_comboSort);
+        //m_rightTopLayout->addWidget(m_comboSort);
 
-        m_rightLayout->addLayout(m_rightTopLayout);
+        //m_rightLayout->addLayout(m_rightTopLayout);
 
 
         // bottom right bottom
@@ -198,8 +198,7 @@ MainWindow::initWidget()
         m_dock->setAllowedAreas(Qt::NoDockWidgetArea);
         m_dock->setWidget(m_preview);
         m_dock->setFeatures(QDockWidget::DockWidgetMovable |
-                            QDockWidget::DockWidgetFloatable |
-                            QDockWidget::DockWidgetClosable);
+                            QDockWidget::DockWidgetFloatable);
         m_dock->setMinimumSize(QSize(200, 200));
 
         addDockWidget(Qt::BottomDockWidgetArea, m_dock);
