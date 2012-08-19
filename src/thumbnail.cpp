@@ -131,18 +131,12 @@ Thumbnail::setImage(image &img)
         QString name;
         QString width, height;
 
-        m_picture->setPixmap(QPixmap::fromImage(img.img));
-
         name = img.file;
         if (name.size() > 12) {
                 name.resize(12);
                 name += tr("...");
         }
         m_nameLabel->setText(name);
-
-        width.setNum(img.width);
-        height.setNum(img.height);
-        m_sizeLabel->setText(width + tr("x") + height);
 
         m_path   = img.path;
         m_file   = img.file;
@@ -152,8 +146,20 @@ Thumbnail::setImage(image &img)
         m_size   = img.size;
         m_ccvr   = img.ccvr;
         m_hogr   = img.hogr;
+	m_loaded = img.loaded;
 
-        zOrder();
+	if (img.loaded) {
+	        m_picture->setPixmap(QPixmap::fromImage(img.img));
+
+		width.setNum(img.width);
+		height.setNum(img.height);
+	        m_sizeLabel->setText(width + tr("x") + height);
+
+	        zOrder();
+	} else {
+	        m_sizeLabel->setText("failed to load");
+	        m_znum = 0;
+	}
 }
 
 void

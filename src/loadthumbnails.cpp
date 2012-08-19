@@ -95,6 +95,9 @@ LoadThumbnails::run()
                     fileInfo.lastModified() == m_imageCache[path].date) {
                         cache = m_imageCache[path];
 
+			if (cache.width == 0 || cache.height == 0)
+			        goto err;
+
                         m_images[i].img    = cache.img;
                         m_images[i].width  = cache.width;
                         m_images[i].height = cache.height;
@@ -105,6 +108,11 @@ LoadThumbnails::run()
                                 m_images[i].loaded = false;
                                 goto err;
                         }
+
+			if (img.width() <= 0 || img.height() <= 0) {
+			        m_images[i].loaded = false;
+			        goto err;
+			}
 
                         if (img.width() <= Thumbnail::getImgWidth() &&
                             img.height() <= Thumbnail::getImgHeight()) {
@@ -145,13 +153,14 @@ LoadThumbnails::run()
                         }
                 }
 
+                m_images[i].loaded = true;
+
+	err:
                 m_images[i].file   = files.at(i);
                 m_images[i].path   = path;
                 m_images[i].size   = fileInfo.size();
                 m_images[i].date   = fileInfo.lastModified();
-                m_images[i].loaded = true;
 
-        err:
                 m_numLoaded++;
 
                 {

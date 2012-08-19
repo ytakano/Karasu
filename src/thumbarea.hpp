@@ -44,6 +44,12 @@ private:
                                  const Thumbnail *rhs) const;
         };
 
+        class compareByName {
+        public:
+                bool operator() (const Thumbnail *lhs,
+                                 const Thumbnail *rhs) const;
+        };
+
         static const int margin;
         static const int spacing;
 
@@ -63,6 +69,7 @@ private:
         void clearThumbnails();
         void drawThumbnails(std::vector<Thumbnail*> &thumb);
         void sortByCorr();
+        void sortByName();
 };
 
 #endif // THUMBSCROLL_HPP

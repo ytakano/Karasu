@@ -266,11 +266,27 @@ ThumbArea::changedFocus(Thumbnail *thumb)
 }
 
 bool
+ThumbArea::compareByName::operator() (const Thumbnail *lhs,
+                                      const Thumbnail *rhs) const
+{
+        return lhs->getFile() < rhs->getFile();
+}
+
+bool
 ThumbArea::compareByCorr::operator() (const Thumbnail *lhs,
                                       const Thumbnail *rhs) const
 {
         int znum;
         boost::shared_array<uint32_t> z1, z2;
+
+	if (lhs->getZnum() == 0 && rhs->getZnum() == 0) {
+	        return false;
+	} else if (lhs->getZnum() == 0) {
+	        return false;
+	} else if (rhs->getZnum() == 0) {
+	        return true;
+	}
+	  
 
         z1 = lhs->getZ();
         z2 = rhs->getZ();
@@ -345,11 +361,13 @@ ThumbArea::compareByCorr::operator() (const Thumbnail *lhs,
 void
 ThumbArea::sortByCorr()
 {
-        std::cout << "sort" << std::endl;
         std::sort(m_thumbByCorr.begin(), m_thumbByCorr.end(),
                   compareByCorr());
+}
 
-        BOOST_FOREACH(Thumbnail *thumb, m_thumbByCorr) {
-                std::cout << thumb->getFile().toUtf8().data() << std::endl;
-        }
+void
+ThumbArea::sortByName()
+{
+        std::sort(m_thumbByCorr.begin(), m_thumbByCorr.end(),
+                  compareByName());
 }

@@ -79,6 +79,7 @@ private:
         QLabel      *m_nameLabel;
         QLabel      *m_sizeLabel;
 
+        bool      m_loaded;
         QString   m_path;
         QString   m_file;
         QDateTime m_date;

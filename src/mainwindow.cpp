@@ -171,9 +171,9 @@ MainWindow::initWidget()
         m_rightTopLayout = new QHBoxLayout;
         m_comboSort      = new QComboBox;
 
-        //m_rightTopLayout->addWidget(m_comboSort);
+        m_rightTopLayout->addWidget(m_comboSort);
 
-        //m_rightLayout->addLayout(m_rightTopLayout);
+        m_rightLayout->addLayout(m_rightTopLayout);
 
 
         // bottom right bottom
