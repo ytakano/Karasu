@@ -16,7 +16,7 @@ const int ThumbArea::margin  = 8;
 const int ThumbArea::spacing = 4;
 
 ThumbArea::ThumbArea(PreviewArea *preview, QLabel *status)
-        : m_preview(preview), m_status(status), m_pThumb(NULL)
+  : m_preview(preview), m_status(status), m_sortType(0), m_pThumb(NULL)
 {
         m_widget = new QWidget;
 
@@ -150,6 +150,13 @@ ThumbArea::repaintThumbnails()
 }
 
 void
+ThumbArea::setSortType(int idx)
+{
+        m_sortType = idx;
+	loadImage(m_currentPath);
+}
+
+void
 ThumbArea::loadImage(const QString &path)
 {
         Thumbnail *thumb;
@@ -189,7 +196,11 @@ ThumbArea::loadImage(const QString &path)
 
         if (m_loadThumbs.readEverything()) {
                 m_loadThumbs.stop();
-                sortByCorr();
+		if (m_sortType == 0) {
+		        sortByCorr();
+		} else if (m_sortType == 1) {
+		        sortByName();
+		}
                 drawThumbnails(m_thumbByCorr);
                 emit loadFinished();
                 return;

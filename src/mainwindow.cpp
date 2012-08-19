@@ -40,6 +40,8 @@ void
 MainWindow::readSettings()
 {
         QRect rect;
+	QSize size;
+	bool  isFloating;
         QSettings settings("Project Karasu", "karasu");
 
         rect = settings.value("mainwindow/geometry",
@@ -48,12 +50,18 @@ MainWindow::readSettings()
         move(rect.topLeft());
         resize(rect.size());
 
+        isFloating = settings.value("preview/floating", false).toBool();
+	m_dock->setFloating(isFloating);
 
-        rect = settings.value("preview/geometry",
-                              QRect(755, 0, 250, 350)).toRect();
+	if (isFloating) {
+	        rect = settings.value("preview/geometry",
+				      QRect(755, 0, 250, 350)).toRect();
 
-        m_dock->move(rect.topLeft());
-        m_dock->resize(rect.size());
+		m_dock->move(rect.topLeft());
+		m_dock->resize(rect.size());
+	}
+
+	restoreState(settings.value("mainwindow/state").toByteArray());
 
 
         m_splitter->restoreState(settings.value("splitter/state").toByteArray());
@@ -81,8 +89,10 @@ MainWindow::writeSettings()
 {
         QSettings settings("Project Karasu", "karasu");
 
+        settings.setValue("mainwindow/state", saveState());
         settings.setValue("mainwindow/geometry", geometry());
         settings.setValue("preview/geometry", m_dock->geometry());
+        settings.setValue("preview/floating", m_dock->isFloating());
         settings.setValue("splitter/state", m_splitter->saveState());
         settings.setValue("tree/width", m_dirTree->columnWidth(0));
         settings.setValue("thumbnail/path", m_thumbArea->getCurrentPath());
@@ -171,6 +181,9 @@ MainWindow::initWidget()
         m_rightTopLayout = new QHBoxLayout;
         m_comboSort      = new QComboBox;
 
+	m_comboSort->addItem(tr("相関で並び替え"));
+	m_comboSort->addItem(tr("ファイル名で並び替え"));
+
         m_rightTopLayout->addWidget(m_comboSort);
 
         m_rightLayout->addLayout(m_rightTopLayout);
@@ -185,6 +198,11 @@ MainWindow::initWidget()
                          this,
                          SLOT(enableSort()));
 
+	QObject::connect(m_comboSort,
+			 SIGNAL(currentIndexChanged(int)),
+			 m_thumbArea,
+			 SLOT(setSortType(int)));
+
         //m_thumbArea->setCurrentPath(QDir::currentPath());
 
         m_rightLayout->addWidget(m_thumbArea);
@@ -193,17 +211,16 @@ MainWindow::initWidget()
 
 
         // dock
-        m_dock    = new QDockWidget;
+        m_dock = new QDockWidget;
 
         m_dock->setAllowedAreas(Qt::NoDockWidgetArea);
         m_dock->setWidget(m_preview);
         m_dock->setFeatures(QDockWidget::DockWidgetMovable |
                             QDockWidget::DockWidgetFloatable);
         m_dock->setMinimumSize(QSize(200, 200));
+	m_dock->setObjectName("preview");
 
-        addDockWidget(Qt::BottomDockWidgetArea, m_dock);
-
-        m_dock->setFloating(true);
+        addDockWidget(Qt::RightDockWidgetArea, m_dock);
 }
 
 void

@@ -32,6 +32,7 @@ public slots:
         void loadImages();
         void loadImage(const QString &path);
         void changedFocus(Thumbnail *thumb);
+        void setSortType(int);
 
 protected:
         virtual void scrollContentsBy(int dx, int dy);
@@ -59,6 +60,7 @@ private:
         QWidget *m_widget;
         QString  m_currentPath;
         QLabel  *m_status;
+        int      m_sortType;
 
         std::vector<Thumbnail*> *m_pThumb;
         std::vector<Thumbnail*>  m_thumbPool;
